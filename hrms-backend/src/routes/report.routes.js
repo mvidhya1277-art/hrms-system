@@ -1,37 +1,22 @@
 import express from "express";
-import {
-  getTodayAttendance,
-  getAttendanceByDate,
-  getAttendanceByEmployee,
-  getMyAttendance,
-  attendanceLeaveReport,
-} from "../controllers/report.controller.js";
+import {protect} from "../middleware/auth.middleware.js";
+import { getAttendanceReport } from "../controllers/reports/attendance.report.js";
+import { getWorkingHoursReport } from "../controllers/reports/workingHours.report.js";
+import { getLeaveReport } from "../controllers/reports/leave.report.js";
+import { getPayrollReport } from "../controllers/reports/payroll.report.js";
+import { getPerformanceReport } from "../controllers/reports/performance.report.js";
 
-import { protect ,hrAdminOnly} from "../middleware/auth.middleware.js";
-import { companyScope } from "../middleware/CompanyScope.js";
+
+
 
 
 const router = express.Router();
 
-// Daily report (today)
-router.get("/today", protect, companyScope, getTodayAttendance);
-
-// Attendance by date
-router.get("/date/:date", protect, companyScope, getAttendanceByDate);
-
-
-// Attendance by employee
-router.get("/employee/:empId",protect, companyScope, getAttendanceByEmployee);
-
-//Employee view Attendance of their own
-
-router.get("/my-attendance",protect, getMyAttendance);
-
-
-router.get("/attendance-leave",protect, attendanceLeaveReport);
-// router.get("/attendance-leave/admin-self",protect,hrAdminOnly,getAdminOwnCalendar);
-
-router.get("/attendance-leave/:employeeId",protect,hrAdminOnly,attendanceLeaveReport);
+router.get("/attendance", protect, getAttendanceReport);
+router.get("/working-hours", protect, getWorkingHoursReport);
+router.get("/leave", protect, getLeaveReport);
+router.get("/payroll", protect, getPayrollReport);
+router.get("/performance", protect, getPerformanceReport);
 
 
 

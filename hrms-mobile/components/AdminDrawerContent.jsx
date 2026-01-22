@@ -50,11 +50,12 @@ export default function AdminDrawerContent({ navigation }) {
         <MenuItem
           icon="bar-chart-outline"
           label="Reports"
+          route="/(admin-tabs)/reports"
         />
         <MenuItem
           icon="cash-outline"
           label="Payroll"
-          route="/(admin-tabs)/tabs/employees/payroll"
+          route="/(admin-tabs)/tabs/employees/all-payrolls"
         />
         <MenuItem
           icon="settings-outline"

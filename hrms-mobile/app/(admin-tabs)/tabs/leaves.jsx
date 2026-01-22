@@ -69,8 +69,34 @@ export default function AdminLeaves() {
       item.status === "approved"
         ? "#22c55e"
         : item.status === "rejected"
-        ? "#ef4444"
-        : "#f59e0b";
+          ? "#ef4444"
+          : "#f59e0b";
+
+    // 📅 Format date to DD-MM-YYYY
+    const formatDate = (dateValue) => {
+      if (!dateValue) return "-";
+
+      const date = new Date(dateValue);
+
+      const day = String(date.getDate()).padStart(2, "0");
+
+      const monthNames = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      ];
+
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+
+      return `${day}-${month}-${year}`;
+    };
+
+    // 📝 Capitalize leave type
+    const formatLeaveType = (type) => {
+      if (!type) return "-";
+      return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+    };
+
 
     return (
       <View style={styles.card}>
@@ -95,17 +121,23 @@ export default function AdminLeaves() {
         {/* DETAILS */}
         <View style={styles.detailRow}>
           <Text style={styles.label}>Leave Type</Text>
-          <Text style={styles.value}>{item.leaveType}</Text>
+          <Text style={styles.value}>
+            {formatLeaveType(item.leaveType)}
+          </Text>
         </View>
 
         <View style={styles.detailRow}>
           <Text style={styles.label}>From</Text>
-          <Text style={styles.value}>{item.fromDate}</Text>
+          <Text style={styles.value}>
+            {formatDate(item.fromDate)}
+          </Text>
         </View>
 
         <View style={styles.detailRow}>
           <Text style={styles.label}>To</Text>
-          <Text style={styles.value}>{item.toDate}</Text>
+          <Text style={styles.value}>
+            {formatDate(item.toDate)}
+          </Text>
         </View>
 
         <View style={styles.reasonBox}>

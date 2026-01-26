@@ -1,7 +1,14 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, TextInput, Button } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../../../store/authStore";
-import EmployeeCalendar from "../../(admin-tabs)/tabs/employees/calendar";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import axios from "axios";
 import { useState } from "react";
@@ -9,15 +16,17 @@ import { API_BASE_URL } from "../../../constants/api";
 
 export default function AdminProfile() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, token } = useAuthStore();
+
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [fromDate, setFromDate] = useState(new Date());
   const [toDate, setToDate] = useState(new Date());
   const [leaveType, setLeaveType] = useState("FULL");
   const [reason, setReason] = useState("");
-  const token = useAuthStore((s) => s.token);
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
+
+  if (!user) return null;
 
   const applyAdminLeave = async () => {
     try {
@@ -25,17 +34,11 @@ export default function AdminProfile() {
         alert("To date cannot be before from date");
         return;
       }
+
       await axios.post(
         `${API_BASE_URL}/leaves/admin/apply`,
-        {
-          fromDate,
-          toDate,
-          leaveType,
-          reason,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { fromDate, toDate, leaveType, reason },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       alert("Leave applied successfully");
@@ -46,110 +49,89 @@ export default function AdminProfile() {
     }
   };
 
-  // ✅ MUST be inside the function
-  if (!user) {
-    return null; // prevents crash after logout
-  }
-
-  const handleLogout = async () => {
-    await logout();
-    setTimeout(() => {
-      router.replace("/login");
-    }, 0);
-  };
-
   return (
-
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Admin Profile</Text>
+      {/* Profile Top */}
+      <View style={styles.profileTop}>
+        <Text style={styles.name}>{user.name}</Text>
+        <Text style={styles.role}>Admin</Text>
+        <Text style={styles.company}>{user.companyName}</Text>
+      </View>
 
+      {/* Profile Card */}
       <View style={styles.card}>
-        <ProfileRow label="Name" value={user.name} />
-        <ProfileRow label="Phone" value={user.phone} />
-        <ProfileRow label="Role" value="Admin" />
-        <ProfileRow label="Company" value={user.companyName} />
+        <Text style={styles.cardTitle}>Admin Profile</Text>
+
+        <ProfileField label="Name" value={user.name} />
+        <ProfileField label="Phone" value={user.phone} />
+        <ProfileField label="Role" value="Admin" />
+        <ProfileField label="Company" value={user.companyName} />
       </View>
 
-      <View style={{ marginTop: 30 }}>
-        <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 10 }}>
-          My Attendance
-        </Text>
-
-        <EmployeeCalendar
-          key={user.employeeId}
-          employeeId={user.employeeId}
-          employeeName={user.name}
-        />
-      </View>
-      <View style={{ marginTop: 25 }}>
+      {/* Action Buttons */}
+      <View style={styles.buttonRow}>
         <TouchableOpacity
-          style={styles.applyBtn}
-          onPress={() => {
-            setFromDate(new Date());
-            setToDate(new Date());
-            setLeaveType("FULL");
-            setReason("");
-            setShowLeaveModal(true);
-          }}>
-          <Text style={styles.applyBtnText}>Apply Leave</Text>
+          style={styles.primaryBtn}
+          onPress={() =>
+            router.push("/(admin-tabs)/tabs/employees/all-payrolls")
+          }
+        >
+          <Text style={styles.primaryBtnText}>VIEW PAYROLL</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.outlineBtn}
+          onPress={() => setShowLeaveModal(true)}
+        >
+          <Text style={styles.outlineBtnText}>Apply Leave</Text>
         </TouchableOpacity>
       </View>
 
+      {/* My Attendance */}
+      <TouchableOpacity
+        style={styles.attendanceBtn}
+        onPress={() =>
+          router.push("/(admin-tabs)/tabs/employees/calendar")
+        }
+      >
+        <Text style={styles.attendanceText}>MY ATTENDANCE</Text>
+      </TouchableOpacity>
+
+      {/* Leave Modal */}
       <Modal visible={showLeaveModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Apply Leave</Text>
 
-            {/* FROM DATE */}
             <Text style={styles.modalLabel}>From Date</Text>
             <TouchableOpacity onPress={() => setShowFromPicker(true)}>
-              <Text style={styles.dateText}>
-                {fromDate.toDateString()}
-              </Text>
+              <Text style={styles.dateText}>{fromDate.toDateString()}</Text>
             </TouchableOpacity>
 
             {showFromPicker && (
               <DateTimePicker
                 value={fromDate}
                 mode="date"
-                display="default"
                 onChange={(e, d) => {
                   setShowFromPicker(false);
-                  if (d) {
-                    const selected = new Date(d);
-                    selected.setHours(0, 0, 0, 0);
-                    setFromDate(selected);
-
-                    // auto-fix toDate if needed
-                    if (selected > toDate) {
-                      setToDate(selected);
-                    }
-                  }
+                  if (d) setFromDate(d);
                 }}
               />
             )}
 
-            {/* TO DATE */}
             <Text style={styles.modalLabel}>To Date</Text>
             <TouchableOpacity onPress={() => setShowToPicker(true)}>
-              <Text style={styles.dateText}>
-                {toDate.toDateString()}
-              </Text>
+              <Text style={styles.dateText}>{toDate.toDateString()}</Text>
             </TouchableOpacity>
 
             {showToPicker && (
               <DateTimePicker
                 value={toDate}
                 mode="date"
-                display="default"
                 minimumDate={fromDate}
                 onChange={(e, d) => {
                   setShowToPicker(false);
-                  if (d) {
-                    const selected = new Date(d);
-                    selected.setHours(0, 0, 0, 0);
-                    setToDate(selected);
-                  }
+                  if (d) setToDate(d);
                 }}
               />
             )}
@@ -157,15 +139,14 @@ export default function AdminProfile() {
             <Text style={styles.modalLabel}>Leave Type</Text>
             <View style={styles.typeRow}>
               <Text
-                onPress={() => setLeaveType("full")}
-                style={leaveType === "full" ? styles.activeType : styles.type}
+                onPress={() => setLeaveType("FULL")}
+                style={leaveType === "FULL" ? styles.activeType : styles.type}
               >
                 Full Day
               </Text>
-
               <Text
-                onPress={() => setLeaveType("half")}
-                style={leaveType === "half" ? styles.activeType : styles.type}
+                onPress={() => setLeaveType("HALF")}
+                style={leaveType === "HALF" ? styles.activeType : styles.type}
               >
                 Half Day
               </Text>
@@ -179,7 +160,10 @@ export default function AdminProfile() {
             />
 
             <View style={styles.modalActions}>
-              <Text onPress={() => setShowLeaveModal(false)} style={styles.cancelBtn}>
+              <Text
+                onPress={() => setShowLeaveModal(false)}
+                style={styles.cancelBtn}
+              >
                 Cancel
               </Text>
               <Text onPress={applyAdminLeave} style={styles.submitBtn}>
@@ -189,51 +173,78 @@ export default function AdminProfile() {
           </View>
         </View>
       </Modal>
-      <View style={styles.actions}>
-        <Text style={styles.logoutBtn} onPress={handleLogout}>
-          Logout
-        </Text>
-      </View>
     </ScrollView>
   );
 }
 
-/* 🔹 Reusable row */
-function ProfileRow({ label, value }) {
+/* Profile Field */
+function ProfileField({ label, value }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value || "-"}</Text>
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={styles.fieldBox}>
+        <Text style={styles.fieldValue}>{value}</Text>
+      </View>
     </View>
   );
 }
 
-/* 🔹 Styles */
+/* Styles */
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 16 },
+  container: { padding: 20, backgroundColor: "#fff" },
+
+  profileTop: { alignItems: "center", marginBottom: 20 },
+  name: { fontSize: 22, fontWeight: "700" },
+  role: { color: "#e53935", fontWeight: "600", marginTop: 4 },
+  company: { color: "#777" },
+
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    elevation: 2,
+    elevation: 3,
+    marginBottom: 20,
   },
-  row: { marginBottom: 14 },
-  label: { fontSize: 13, color: "#777" },
-  value: { fontSize: 16, fontWeight: "500", marginTop: 2 },
-  actions: { marginTop: 30 },
-  logoutBtn: { color: "red", fontSize: 16, fontWeight: "600" },
-  applyBtn: {
-    backgroundColor: "#4f46e5",
-    padding: 14,
+  cardTitle: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
+
+  field: { marginBottom: 12 },
+  fieldLabel: { fontSize: 13, color: "#777" },
+  fieldBox: {
+    backgroundColor: "#f5f5f5",
     borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#e53935",
+  },
+  fieldValue: { fontSize: 15, fontWeight: "600" },
+
+  buttonRow: { flexDirection: "row", marginBottom: 16 },
+  primaryBtn: {
+    backgroundColor: "#e53935",
+    padding: 14,
+    borderRadius: 30,
+    flex: 1,
+    marginRight: 10,
     alignItems: "center",
   },
-  applyBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+  primaryBtnText: { color: "#fff", fontWeight: "700" },
+  outlineBtn: {
+    borderWidth: 2,
+    borderColor: "#e53935",
+    padding: 14,
+    borderRadius: 30,
+    flex: 1,
+    alignItems: "center",
   },
+  outlineBtnText: { color: "#e53935", fontWeight: "700" },
+
+  attendanceBtn: {
+    backgroundColor: "#e53935",
+    padding: 16,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  attendanceText: { color: "#fff", fontWeight: "700", fontSize: 16 },
 
   modalOverlay: {
     flex: 1,
@@ -247,29 +258,17 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 18,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 12,
+  modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  modalLabel: { marginTop: 10, fontWeight: "500" },
+  dateText: {
+    padding: 10,
+    backgroundColor: "#f1f1f1",
+    borderRadius: 8,
+    marginTop: 6,
   },
-  modalLabel: {
-    marginTop: 10,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  typeRow: {
-    flexDirection: "row",
-    marginTop: 8,
-  },
-  type: {
-    marginRight: 20,
-    color: "#666",
-  },
-  activeType: {
-    marginRight: 20,
-    color: "#4f46e5",
-    fontWeight: "700",
-  },
+  typeRow: { flexDirection: "row", marginTop: 8 },
+  type: { marginRight: 20, color: "#666" },
+  activeType: { marginRight: 20, color: "#e53935", fontWeight: "700" },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -282,13 +281,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     marginTop: 16,
   },
-  cancelBtn: {
-    marginRight: 20,
-    color: "#888",
-  },
-  submitBtn: {
-    color: "#4f46e5",
-    fontWeight: "700",
-  },
+  cancelBtn: { marginRight: 20, color: "#888" },
+  submitBtn: { color: "#e53935", fontWeight: "700" },
 });
-

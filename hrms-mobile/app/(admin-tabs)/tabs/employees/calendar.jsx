@@ -291,7 +291,7 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
           title="View Payroll"
           onPress={() =>
             router.push({
-              pathname: "tabs/employees/payroll",
+              pathname: "/(admin-tabs)/tabs/employees/payroll",
               params: { employeeId: targetEmployeeId, employeeName },
             })
           }

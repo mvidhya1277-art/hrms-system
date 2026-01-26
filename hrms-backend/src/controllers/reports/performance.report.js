@@ -41,6 +41,19 @@ export const getPerformanceReport = async (req, res) => {
       name: 1,
     });
 
+    // ✅ safeguard
+    if (employees.length === 0) {
+      return res.json({
+        filters: { month },
+        summary: {
+          top: 0,
+          average: 0,
+          needsSupport: 0,
+        },
+        records: [],
+      });
+    }
+
     const employeeIds = employees.map(e => e._id);
     const employeeMap = {};
     employees.forEach(e => {
@@ -64,8 +77,6 @@ export const getPerformanceReport = async (req, res) => {
 
       if (!perfMap[empId]) {
         perfMap[empId] = {
-          employeeId: empId,
-          employeeName: employeeMap[empId],
           presentDays: 0,
           lateCount: 0,
         };
@@ -82,55 +93,51 @@ export const getPerformanceReport = async (req, res) => {
 
     /* ---------------- FINAL METRICS ---------------- */
 
-    const totalDaysInMonth = Object.keys(
-      attendanceLogs.reduce((acc, l) => {
-        acc[l.date] = true;
-        return acc;
-      }, {})
-    ).length || 1;
+    const totalDaysInMonth =
+      new Date(Number(month.split("-")[0]), Number(month.split("-")[1]), 0).getDate();
 
-    const records = [];
+    let top = 0;
+    let average = 0;
+    let needsSupport = 0;
 
-    employees.forEach(emp => {
+    const records = employees.map(emp => {
       const empId = emp._id.toString();
-      const data = perfMap[empId] || {
-        presentDays: 0,
-        lateCount: 0,
-      };
+      const data = perfMap[empId] || { presentDays: 0, lateCount: 0 };
 
-      const attendancePercentage = Math.round(
-        (data.presentDays / totalDaysInMonth) * 100
-      );
+      const attendancePercentage =
+        totalDaysInMonth > 0
+          ? Math.round((data.presentDays / totalDaysInMonth) * 100)
+          : 0;
 
       let performanceTag = "Needs Support";
 
       if (attendancePercentage >= 90 && data.lateCount <= 2) {
         performanceTag = "Top Performer";
+        top++;
       } else if (attendancePercentage >= 75) {
         performanceTag = "Average";
+        average++;
+      } else {
+        needsSupport++;
       }
 
-      records.push({
+      return {
         employeeId: empId,
         employeeName: employeeMap[empId],
         presentDays: data.presentDays,
         lateCount: data.lateCount,
         attendancePercentage,
         performanceTag,
-      });
+      };
     });
-
-    /* ---------------- SUMMARY ---------------- */
-
-    const topPerformer = records.find(r => r.performanceTag === "Top Performer") || null;
-    const needsSupport = records.find(r => r.performanceTag === "Needs Support") || null;
 
     /* ---------------- RESPONSE ---------------- */
 
     res.json({
       filters: { month },
       summary: {
-        topPerformer,
+        top,
+        average,
         needsSupport,
       },
       records,

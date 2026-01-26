@@ -54,7 +54,7 @@ export default function EmployeePayroll() {
           <TouchableOpacity
             onPress={() =>
               router.push({
-                pathname: "tabs//employees/payslip",
+                pathname: "/(admin-tabs)/tabs/employees/payslip",
                 params: { payrollId: item._id },
               })
             }

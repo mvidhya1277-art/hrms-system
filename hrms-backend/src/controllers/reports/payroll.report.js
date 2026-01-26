@@ -21,7 +21,6 @@ export const getPayrollReport = async (req, res) => {
       staffType: "employee",
     };
 
-    // employee can see only self
     if (req.user.role === "employee") {
       employeeQuery._id = req.user.employeeId;
     }
@@ -34,6 +33,20 @@ export const getPayrollReport = async (req, res) => {
       _id: 1,
       name: 1,
     });
+
+    // ✅ safeguard
+    if (employees.length === 0) {
+      return res.json({
+        filters: { month, employeeId: employeeId || null },
+        summary: {
+          totalEmployeesPaid: 0,
+          totalBasicSalary: 0,
+          totalDeductions: 0,
+          totalPayout: 0,
+        },
+        records: [],
+      });
+    }
 
     const employeeIds = employees.map(e => e._id);
     const employeeMap = {};
@@ -52,12 +65,14 @@ export const getPayrollReport = async (req, res) => {
     /* ---------------- SUMMARY ---------------- */
 
     let totalEmployeesPaid = payrolls.length;
-    let totalPayout = 0;
+    let totalBasicSalary = 0;
     let totalDeductions = 0;
+    let totalPayout = 0;
 
     payrolls.forEach(p => {
-      totalPayout += p.netSalary || 0;
+      totalBasicSalary += p.basicSalary || 0;
       totalDeductions += p.deductions || 0;
+      totalPayout += p.netSalary || 0;
     });
 
     /* ---------------- RECORDS ---------------- */
@@ -82,8 +97,9 @@ export const getPayrollReport = async (req, res) => {
       },
       summary: {
         totalEmployeesPaid,
-        totalPayout,
+        totalBasicSalary,
         totalDeductions,
+        totalPayout,
       },
       records,
     });

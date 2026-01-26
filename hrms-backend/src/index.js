@@ -16,8 +16,6 @@ import holidayRoutes from "./routes/holiday.routes.js";
 import payslipRoutes from "./routes/payslip.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 
-
-
 dotenv.config();
 
 const app = express();
@@ -36,7 +34,6 @@ app.use("/api/payroll", payrollRoutes);
 app.use("/api/holidays", holidayRoutes);
 app.use("/api/payslip", payslipRoutes);
 app.use("/api/reports", reportRoutes);
-
 
 app.get("/", (req, res) => {
   res.send("HRMS RFID API running");

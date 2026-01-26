@@ -27,7 +27,6 @@ const getDateRange = (from, to) => {
 export const getAttendanceReport = async (req, res) => {
   try {
     const companyId = req.user.companyId;
-
     let { fromDate, toDate, employeeId } = req.query;
 
     /* ---------- DEFAULT DATE = TODAY ---------- */
@@ -42,12 +41,10 @@ export const getAttendanceReport = async (req, res) => {
       staffType: "employee",
     };
 
-    // Employee can see only their own data
     if (req.user.role === "employee") {
       employeeQuery._id = req.user.employeeId;
     }
 
-    // Filter by employee (admin/hr)
     if (employeeId) {
       employeeQuery._id = employeeId;
     }
@@ -57,13 +54,23 @@ export const getAttendanceReport = async (req, res) => {
       name: 1,
     });
 
+    if (employees.length === 0) {
+      return res.json({
+        summary: {
+          totalEmployees: 0,
+          presentCount: 0,
+          absentCount: 0,
+          lateCount: 0,
+        },
+        records: [],
+      });
+    }
+
     const employeeIds = employees.map(e => e._id);
     const employeeMap = {};
     employees.forEach(e => {
       employeeMap[e._id.toString()] = e.name;
     });
-
-    const totalEmployees = employeeIds.length;
 
     /* ---------------- ATTENDANCE LOGS ---------------- */
 
@@ -76,9 +83,9 @@ export const getAttendanceReport = async (req, res) => {
     /* ---------------- BUILD DATE → EMP MAP ---------------- */
 
     const attendanceMap = {};
-    attendanceLogs.forEach(a => {
-      if (!attendanceMap[a.date]) attendanceMap[a.date] = {};
-      attendanceMap[a.date][a.empId.toString()] = a;
+    attendanceLogs.forEach(log => {
+      if (!attendanceMap[log.date]) attendanceMap[log.date] = {};
+      attendanceMap[log.date][log.empId.toString()] = log;
     });
 
     /* ---------------- SUMMARY + RECORDS ---------------- */
@@ -104,9 +111,9 @@ export const getAttendanceReport = async (req, res) => {
             employeeId: empId,
             employeeName: employeeMap[empId],
             status: "P",
-            checkIn: log.inTime || null,     // ✅ CORRECT FIELD
-            checkOut: null,                  // not stored yet
-            workingHours: null,              // can be calculated later
+            checkIn: log.inTime || null,
+            checkOut: log.outTime || null,
+            workingHours: log.workingHours || null,
             isLate: log.isLate === true,
           });
         } else {
@@ -135,7 +142,7 @@ export const getAttendanceReport = async (req, res) => {
         employeeId: employeeId || null,
       },
       summary: {
-        totalEmployees,
+        totalEmployees: employees.length,
         presentCount,
         absentCount,
         lateCount,

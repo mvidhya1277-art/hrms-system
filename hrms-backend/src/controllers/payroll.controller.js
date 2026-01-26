@@ -11,7 +11,7 @@ import Holiday from "../models/Holiday.js";
 const isEvenSaturday = (date) => {
   const weekOfMonth = Math.ceil(date.getDate() / 7);
   return weekOfMonth % 2 === 0;
-};
+};//getEmployeePayroll
 
 const normalizeDate = (d) => {
   if (!d) return null;
@@ -226,20 +226,47 @@ export const getAllPayrolls = async (req, res) => {
   }
 };
 
+// export const getEmployeePayroll = async (req, res) => {
+//   try {
+//     if (!["admin", "hr_admin", "super_admin"].includes(req.user.role)) {
+//       return res.status(403).json({ message: "Access denied" });
+//     }
+//     const payrolls = await Payroll.find({
+//       employeeId: req.params.id,
+//       companyId: req.user.companyId,
+//     }).sort({ month: -1 });
+//     res.json(payrolls);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
 export const getEmployeePayroll = async (req, res) => {
   try {
     if (!["admin", "hr_admin", "super_admin"].includes(req.user.role)) {
       return res.status(403).json({ message: "Access denied" });
     }
+
+    // 🔥 FIX: fallback to logged-in user's employeeId
+    const employeeId = req.params.id || req.user.employeeId;
+
+    if (!employeeId) {
+      return res.status(400).json({
+        message: "Employee ID is required",
+      });
+    }
+
     const payrolls = await Payroll.find({
-      employeeId: req.params.id,
+      employeeId,
       companyId: req.user.companyId,
     }).sort({ month: -1 });
+
     res.json(payrolls);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 export const getMyPayroll = async (req, res) => {
   try {

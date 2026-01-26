@@ -10,6 +10,12 @@ const normalizeDate = (d) => {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 };
 
+const parseHours = (hhmm) => {
+  if (!hhmm) return 0;
+  const [h, m] = hhmm.split(":").map(Number);
+  return h + m / 60;
+};
+
 /* ---------------- WORKING HOURS REPORT ---------------- */
 
 export const getWorkingHoursReport = async (req, res) => {
@@ -17,7 +23,6 @@ export const getWorkingHoursReport = async (req, res) => {
     const companyId = req.user.companyId;
     let { fromDate, toDate, employeeId } = req.query;
 
-    // 🔹 default = today
     const today = normalizeDate(new Date());
     fromDate = normalizeDate(fromDate) || today;
     toDate = normalizeDate(toDate) || fromDate;
@@ -29,7 +34,6 @@ export const getWorkingHoursReport = async (req, res) => {
       staffType: "employee",
     };
 
-    // employee can see only self
     if (req.user.role === "employee") {
       employeeQuery._id = req.user.employeeId;
     }
@@ -42,6 +46,19 @@ export const getWorkingHoursReport = async (req, res) => {
       _id: 1,
       name: 1,
     });
+
+    // ✅ safeguard
+    if (employees.length === 0) {
+      return res.json({
+        summary: {
+          totalEmployeesWorked: 0,
+          totalPresentDays: 0,
+          averageWorkingHours: 0,
+          lateCount: 0,
+        },
+        records: [],
+      });
+    }
 
     const employeeIds = employees.map(e => e._id);
     const employeeMap = {};
@@ -58,9 +75,26 @@ export const getWorkingHoursReport = async (req, res) => {
       status: "Present",
     });
 
+    // ✅ no logs = empty working hours
+    if (attendanceLogs.length === 0) {
+      return res.json({
+        filters: { fromDate, toDate, employeeId: employeeId || null },
+        summary: {
+          totalEmployeesWorked: 0,
+          totalPresentDays: 0,
+          averageWorkingHours: 0,
+          lateCount: 0,
+        },
+        records: [],
+      });
+    }
+
     /* ---------------- AGGREGATION ---------------- */
 
     const workMap = {};
+    let totalHours = 0;
+    let lateCount = 0;
+
     attendanceLogs.forEach(log => {
       const empId = log.empId.toString();
 
@@ -69,34 +103,44 @@ export const getWorkingHoursReport = async (req, res) => {
           employeeId: empId,
           employeeName: employeeMap[empId],
           presentDays: 0,
-          firstCheckIn: null,
+          totalHours: 0,
         };
       }
 
       workMap[empId].presentDays += 1;
 
-      // earliest check-in
-      if (log.inTime) {
-        if (
-          !workMap[empId].firstCheckIn ||
-          log.inTime < workMap[empId].firstCheckIn
-        ) {
-          workMap[empId].firstCheckIn = log.inTime;
-        }
+      if (log.workingHours) {
+        const hrs = parseHours(log.workingHours);
+        workMap[empId].totalHours += hrs;
+        totalHours += hrs;
+      }
+
+      if (log.isLate === true) {
+        lateCount++;
       }
     });
 
     /* ---------------- BUILD RECORDS ---------------- */
 
-    const records = Object.values(workMap);
+    const records = Object.values(workMap).map(r => ({
+      employeeId: r.employeeId,
+      employeeName: r.employeeName,
+      presentDays: r.presentDays,
+      averageHours:
+        r.presentDays > 0 ? Number((r.totalHours / r.presentDays).toFixed(2)) : 0,
+    }));
 
     /* ---------------- SUMMARY ---------------- */
 
-    const totalEmployeesWorked = records.length;
     const totalPresentDays = records.reduce(
       (sum, r) => sum + r.presentDays,
       0
     );
+
+    const averageWorkingHours =
+      totalPresentDays > 0
+        ? Number((totalHours / totalPresentDays).toFixed(2))
+        : 0;
 
     res.json({
       filters: {
@@ -105,8 +149,10 @@ export const getWorkingHoursReport = async (req, res) => {
         employeeId: employeeId || null,
       },
       summary: {
-        totalEmployeesWorked,
+        totalEmployeesWorked: records.length,
         totalPresentDays,
+        averageWorkingHours,
+        lateCount,
       },
       records,
     });

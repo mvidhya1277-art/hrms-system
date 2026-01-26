@@ -1,23 +1,18 @@
 import Leave from "../../models/Leave.js";
 import Employee from "../../models/Employee.js";
 
-/* ---------------- HELPERS ---------------- */
-
 const normalizeDate = (d) => {
   if (!d) return null;
-  if (typeof d === "string" && d.length === 10) return d;
+  if (typeof d === "string" && d.length === 10) return d; // YYYY-MM-DD
   const dt = new Date(d);
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 };
-
-/* ---------------- LEAVE REPORT ---------------- */
 
 export const getLeaveReport = async (req, res) => {
   try {
     const companyId = req.user.companyId;
     let { fromDate, toDate, employeeId, status } = req.query;
 
-    // 🔹 default = today
     const today = normalizeDate(new Date());
     fromDate = normalizeDate(fromDate) || today;
     toDate = normalizeDate(toDate) || fromDate;
@@ -29,7 +24,6 @@ export const getLeaveReport = async (req, res) => {
       staffType: "employee",
     };
 
-    // employee can see only self
     if (req.user.role === "employee") {
       employeeQuery._id = req.user.employeeId;
     }
@@ -42,6 +36,19 @@ export const getLeaveReport = async (req, res) => {
       _id: 1,
       name: 1,
     });
+
+    // ✅ safeguard
+    if (employees.length === 0) {
+      return res.json({
+        summary: {
+          approved: 0,
+          pending: 0,
+          rejected: 0,
+          onLeaveToday: 0,
+        },
+        records: [],
+      });
+    }
 
     const employeeIds = employees.map(e => e._id);
     const employeeMap = {};
@@ -59,7 +66,7 @@ export const getLeaveReport = async (req, res) => {
     };
 
     if (status) {
-      leaveQuery.status = status; // approved / pending / rejected
+      leaveQuery.status = status;
     }
 
     const leaves = await Leave.find(leaveQuery).sort({ fromDate: 1 });
@@ -73,8 +80,8 @@ export const getLeaveReport = async (req, res) => {
 
     leaves.forEach(l => {
       if (l.status === "approved") approved++;
-      if (l.status === "pending") pending++;
-      if (l.status === "rejected") rejected++;
+      else if (l.status === "pending") pending++;
+      else if (l.status === "rejected") rejected++;
 
       if (
         l.status === "approved" &&

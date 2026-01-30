@@ -27,27 +27,33 @@ const getDateRange = (from, to) => {
 export const getAttendanceReport = async (req, res) => {
   try {
     const companyId = req.user.companyId;
-    let { fromDate, toDate, employeeId } = req.query;
+    const { type = "monthly", date, month, employeeId } = req.query;
 
-    /* ---------- DEFAULT DATE = TODAY ---------- */
     const today = normalizeDate(new Date());
-    fromDate = normalizeDate(fromDate) || today;
-    toDate = normalizeDate(toDate) || fromDate;
+    let fromDate, toDate;
+
+    if (type === "daily") {
+      fromDate = normalizeDate(date) || today;
+      toDate = fromDate;
+    } else {
+      if (month) {
+        const [y, m] = month.split("-");
+        fromDate = `${y}-${m}-01`;
+        toDate = `${y}-${m}-${new Date(y, m, 0).getDate()}`;
+      } else {
+        fromDate = today;
+        toDate = today;
+      }
+    }
 
     /* ---------------- EMPLOYEES ---------------- */
 
-    const employeeQuery = {
-      companyId,
-      staffType: "employee",
-    };
+    const employeeQuery = { companyId, staffType: "employee" };
 
     if (req.user.role === "employee") {
       employeeQuery._id = req.user.employeeId;
     }
-
-    if (employeeId) {
-      employeeQuery._id = employeeId;
-    }
+    if (employeeId) employeeQuery._id = employeeId;
 
     const employees = await Employee.find(employeeQuery, {
       _id: 1,
@@ -58,9 +64,9 @@ export const getAttendanceReport = async (req, res) => {
       return res.json({
         summary: {
           totalEmployees: 0,
-          presentCount: 0,
-          absentCount: 0,
-          lateCount: 0,
+          avgPresent: 0,
+          avgAbsent: 0,
+          avgLate: 0,
         },
         records: [],
       });
@@ -79,8 +85,6 @@ export const getAttendanceReport = async (req, res) => {
       empId: { $in: employeeIds },
       date: { $gte: fromDate, $lte: toDate },
     });
-
-    /* ---------------- BUILD DATE → EMP MAP ---------------- */
 
     const attendanceMap = {};
     attendanceLogs.forEach(log => {
@@ -133,19 +137,23 @@ export const getAttendanceReport = async (req, res) => {
       }
     }
 
+    /* ---------------- AVERAGES ---------------- */
+
+    const totalEmployees = employees.length;
+
+    const avgPresent = Number((presentCount / totalEmployees).toFixed(2));
+    const avgAbsent = Number((absentCount / totalEmployees).toFixed(2));
+    const avgLate = Number((lateCount / totalEmployees).toFixed(2));
+
     /* ---------------- RESPONSE ---------------- */
 
     res.json({
-      filters: {
-        fromDate,
-        toDate,
-        employeeId: employeeId || null,
-      },
+      filters: { fromDate, toDate, employeeId: employeeId || null },
       summary: {
-        totalEmployees: employees.length,
-        presentCount,
-        absentCount,
-        lateCount,
+        totalEmployees,
+        avgPresent,
+        avgAbsent,
+        avgLate,
       },
       records,
     });

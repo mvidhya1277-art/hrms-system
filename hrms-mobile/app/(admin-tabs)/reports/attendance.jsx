@@ -1,255 +1,10 @@
-// import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-// import { SafeAreaView } from "react-native-safe-area-context";
-// import { PieChart } from "react-native-chart-kit";
-// import { useEffect, useState } from "react";
-// import axios from "axios";
-
-// import { chartConfig, screenWidth } from "../../../constants/chartConfig";
-// import { API_BASE_URL } from "../../../constants/api";
-// import { useAuthStore } from "../../../store/authStore";
-// import MonthPicker from "../../../components/MonthPicker";
-
-
-// export default function AttendanceReport() {
-//   const { token } = useAuthStore();
-
-//   const [loading, setLoading] = useState(true);
-//   const [stats, setStats] = useState({
-//     present: 0,
-//     absent: 0,
-//     late: 0,
-//   });
-
-//   const [month, setMonth] = useState(
-//   new Date().toISOString().slice(0, 7)
-// );
-
-// const getDateRange = (month) => {
-//   const [y, m] = month.split("-");
-//   const start = `${y}-${m}-01`;
-//   const end = `${y}-${m}-${new Date(y, m, 0).getDate()}`;
-//   return { start, end };
-// };
-
-// const { start, end } = getDateRange(month);
-
-
-//   useEffect(() => {
-//     fetchAttendance();
-//   }, []);
-
-//   const fetchAttendance = async () => {
-//     try {
-//       const res = await axios.get(
-//         `${API_BASE_URL}/reports/attendance`,
-//         {
-//           headers: {
-//             params: { fromDate: start, toDate: end },
-//             Authorization: `Bearer ${token}`,
-//           },
-//         }
-//       );
-
-//       const summary = res.data.summary;
-
-//       setStats({
-//         present: summary.presentCount || 0,
-//         absent: summary.absentCount || 0,
-//         late: summary.lateCount || 0,
-//       });
-
-//     } catch (err) {
-//       console.error("Attendance fetch error:", err);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const chartData = [
-//     { name: "Present", population: stats.present, color: "#22C55E", legendFontColor: "#374151" },
-//     { name: "Absent", population: stats.absent, color: "#EF4444", legendFontColor: "#374151" },
-//     { name: "Late", population: stats.late, color: "#F59E0B", legendFontColor: "#374151" },
-//   ];
-
-//   if (loading) {
-//     return (
-//       <SafeAreaView style={styles.container}>
-//         <ActivityIndicator size="large" />
-//       </SafeAreaView>
-//     );
-//   }
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <ScrollView>
-
-//         <Text style={styles.title}>Attendance Report</Text>
-
-//         {/* Summary Cards with Checkbox Style */}
-//         <View style={styles.listContainer}>
-//           <Card label="Present" value={stats.present} status="present" />
-//           <Card label="Absent" value={stats.absent} status="absent" />
-//           <Card label="Late" value={stats.late} status="late" />
-//         </View>
-
-//         {/* Chart */}
-//         <View style={styles.chartContainer}>
-//           <PieChart
-//             data={chartData}
-//             width={screenWidth - 32}
-//             height={220}
-//             chartConfig={chartConfig}
-//             accessor="population"
-//             backgroundColor="transparent"
-//             paddingLeft="16"
-//             absolute
-//             hasLegend={true}
-//             center={[10, 0]}
-//             avoidFalseZero={true}
-//           />
-//         </View>
-
-//       </ScrollView>
-//     </SafeAreaView>
-//   );
-// }
-
-// const Card = ({ label, value, status }) => {
-//   // Get checkbox style based on status
-//   const getCheckboxStyle = () => {
-//     switch(status) {
-//       case 'present':
-//         return [styles.checkbox, styles.checkboxPresent];
-//       case 'absent':
-//         return [styles.checkbox, styles.checkboxAbsent];
-//       case 'late':
-//         return [styles.checkbox, styles.checkboxLate];
-//       default:
-//         return [styles.checkbox];
-//     }
-//   };
-
-//   // Get checkbox text based on status
-//   const getCheckboxText = () => {
-//     switch(status) {
-//       case 'present':
-//         return "✓";
-//       case 'absent':
-//         return "✗";
-//       case 'late':
-//         return "…";
-//       default:
-//         return "";
-//     }
-//   };
-
-//   return (
-//     <View style={styles.card}>
-//       <View style={styles.cardLeft}>
-//         <View style={getCheckboxStyle()}>
-//           <Text style={styles.checkboxText}>{getCheckboxText()}</Text>
-//         </View>
-//         <Text style={styles.cardLabel}>({status === 'present' ? '1' : status === 'absent' ? '2' : '3'}) {label}</Text>
-//       </View>
-//       <Text style={styles.cardValue}>{value}</Text>
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: { 
-//     flex: 1, 
-//     padding: 16, 
-//     backgroundColor: "#F5F7FB" 
-//   },
-//   title: { 
-//     fontSize: 22, 
-//     fontWeight: "700", 
-//     marginBottom: 24,
-//     color: "#1F2937"
-//   },
-//   listContainer: { 
-//     marginBottom: 28 
-//   },
-//   chartContainer: {
-//     backgroundColor: "#FFFFFF",
-//     borderRadius: 16,
-//     padding: 16,
-//     shadowColor: "#000",
-//     shadowOffset: {
-//       width: 0,
-//       height: 2,
-//     },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 4,
-//     elevation: 3,
-//   },
-//   card: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     backgroundColor: "#FFFFFF",
-//     borderRadius: 12,
-//     padding: 16,
-//     marginBottom: 12,
-//     shadowColor: "#000",
-//     shadowOffset: {
-//       width: 0,
-//       height: 1,
-//     },
-//     shadowOpacity: 0.05,
-//     shadowRadius: 2,
-//     elevation: 2,
-//     borderWidth: 1,
-//     borderColor: "#E5E7EB"
-//   },
-//   cardLeft: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     gap: 12,
-//   },
-//   checkbox: {
-//     width: 24,
-//     height: 24,
-//     borderRadius: 4,
-//     borderWidth: 2,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   checkboxPresent: {
-//     backgroundColor: "#DCFCE7",
-//     borderColor: "#22C55E",
-//   },
-//   checkboxAbsent: {
-//     backgroundColor: "#FEE2E2",
-//     borderColor: "#EF4444",
-//   },
-//   checkboxLate: {
-//     backgroundColor: "#FEF3C7",
-//     borderColor: "#F59E0B",
-//   },
-//   checkboxText: {
-//     fontSize: 14,
-//     fontWeight: 'bold',
-//     color: "#1F2937"
-//   },
-//   cardLabel: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//     color: "#374151"
-//   },
-//   cardValue: {
-//     fontSize: 20,
-//     fontWeight: '700',
-//     color: "#1F2937"
-//   }
-// });
-
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PieChart } from "react-native-chart-kit";
 import { useEffect, useState } from "react";
 import axios from "axios";
+
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { chartConfig, screenWidth } from "../../../constants/chartConfig";
 import { API_BASE_URL } from "../../../constants/api";
@@ -262,44 +17,40 @@ export default function AttendanceReport() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ present: 0, absent: 0, late: 0 });
 
+  const [mode, setMode] = useState("monthly"); // daily | monthly//getDateRange
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  );//dateText use
+
   const [month, setMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
 
-  const getDateRange = (month) => {
-    const [y, m] = month.split("-");
-    return {
-      start: `${y}-${m}-01`,
-      end: `${y}-${m}-${new Date(y, m, 0).getDate()}`
-    };
-  };
+  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     fetchAttendance();
-  }, [month]); // ✅ re-fetch on month change
+  }, [month, selectedDate, mode]); // ✅ re-fetch on month change summary
+
 
   const fetchAttendance = async () => {
     try {
-      setLoading(true); // ✅ reset loader
+      setLoading(true);
 
-      const { start, end } = getDateRange(month);
-
-      const res = await axios.get(
-        `${API_BASE_URL}/reports/attendance`,
-        {
-          params: { fromDate: start, toDate: end }, // ✅ CORRECT
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axios.get(`${API_BASE_URL}/reports/attendance`, {
+        params:
+          mode === "daily"
+            ? { type: "daily", date: selectedDate }
+            : { type: "monthly", month },
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       const summary = res.data.summary;
 
       setStats({
-        present: summary.presentCount || 0,
-        absent: summary.absentCount || 0,
-        late: summary.lateCount || 0,
+        present: summary.avgPresent || 0,
+        absent: summary.avgAbsent || 0,
+        late: summary.avgLate || 0,
       });
 
     } catch (err) {
@@ -308,6 +59,7 @@ export default function AttendanceReport() {
       setLoading(false);
     }
   };
+
 
   const chartData = [
     { name: "Present", population: stats.present, color: "#22C55E", legendFontColor: "#374151" },
@@ -328,15 +80,68 @@ export default function AttendanceReport() {
       <ScrollView>
 
         <Text style={styles.title}>Attendance Report</Text>
+        <View style={styles.toggleRow}>
+          <Pressable
+            style={[styles.togglePill, mode === "daily" && styles.toggleActive]}
+            onPress={() => setMode("daily")}
+          >
+            <Text style={[styles.toggleText, mode === "daily" && styles.toggleTextActive]}>
+              Daily
+            </Text>
+          </Pressable>
 
-        {/* ✅ MONTH PICKER */}
-        <MonthPicker month={month} onChange={setMonth} />
+          <Pressable
+            style={[styles.togglePill, mode === "monthly" && styles.toggleActive]}
+            onPress={() => setMode("monthly")}
+          >
+            <Text style={[styles.toggleText, mode === "monthly" && styles.toggleTextActive]}>
+              Monthly
+            </Text>
+          </Pressable>
+        </View>
+
+        {mode === "monthly" ? (
+          <MonthPicker month={month} onChange={setMonth} />
+        ) : (
+          <>
+            <Pressable style={styles.dateCard} onPress={() => setShowPicker(true)}>
+              <View style={styles.dateIconWrap}>
+                <Text style={styles.dateIcon}>📅</Text>
+              </View>
+
+              <View>
+                <Text style={styles.dateMain}>
+                  {new Date(selectedDate).toDateString()}
+                </Text>
+                <Text style={styles.dateSub}>Tap to change date</Text>
+              </View>
+            </Pressable>
+
+
+            {showPicker && (
+              <DateTimePicker
+                value={new Date(selectedDate)}
+                mode="date"
+                display="default"
+                onChange={(e, d) => {
+                  setShowPicker(false);
+                  if (d) setSelectedDate(d.toISOString().slice(0, 10));
+                }}
+              />
+            )}
+          </>
+        )}
+
+
+
+        {/* ✅ MONTH PICKER
+        <MonthPicker month={month} onChange={setMonth} /> */}
 
         {/* Summary Cards */}
         <View style={styles.listContainer}>
-          <Card label="Present" value={stats.present} status="present" />
-          <Card label="Absent" value={stats.absent} status="absent" />
-          <Card label="Late" value={stats.late} status="late" />
+          <Card label="Avg Present days" value={stats.present} status="present" />
+          <Card label="Avg Absent days" value={stats.absent} status="absent" />
+          <Card label="Avg Late days" value={stats.late} status="late" />
         </View>
 
         {/* Chart */}
@@ -394,6 +199,35 @@ const styles = StyleSheet.create({
     padding: 16,
     elevation: 3,
   },
+  toggleRow: {
+    flexDirection: "row",
+    backgroundColor: "#E5E7EB",
+    borderRadius: 30,
+    padding: 4,
+    marginBottom: 12,
+  },
+
+  togglePill: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 24,
+    alignItems: "center",
+  },
+
+  toggleActive: {
+    backgroundColor: "#2563EB",
+  },
+
+  toggleText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+  },
+
+  toggleTextActive: {
+    color: "#FFFFFF",
+  },
+
   card: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -414,6 +248,55 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  dateText: {
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+    color: "#2563EB",
+  },
+  dateCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+
+  dateIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#2563EB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  dateIcon: {
+    fontSize: 22,
+    color: "#FFFFFF",
+  },
+
+  dateMain: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  dateSub: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+
   checkboxText: { fontWeight: "700" },
   cardLabel: { fontSize: 16, fontWeight: "600" },
   cardValue: { fontSize: 20, fontWeight: "700" },

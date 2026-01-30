@@ -1,18 +1,3 @@
-// import { Dimensions } from "react-native";
-
-// export const screenWidth = Dimensions.get("window").width;
-
-// export const chartConfig = {
-//   backgroundGradientFrom: "#1F2A37",
-//   backgroundGradientTo: "#1F2A37",
-//   decimalPlaces: 0,
-//   color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-//   labelColor: (opacity = 1) => `rgba(203, 213, 225, ${opacity})`,
-//   style: {
-//     borderRadius: 16,
-//   },
-// };
-
 import { Dimensions } from "react-native";
 
 export const screenWidth = Dimensions.get("window").width;
@@ -22,7 +7,15 @@ export const chartConfig = {
   backgroundGradientFrom: "#FFFFFF",
   backgroundGradientTo: "#FFFFFF",
   decimalPlaces: 0,
-  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  // color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  color: (opacity = 1, index) => {
+    const colors = [
+      `rgba(34, 197, 94, ${opacity})`,
+      `rgba(245, 158, 11, ${opacity})`,
+      `rgba(239, 68, 68, ${opacity})`,
+    ];
+    return colors[index] || `rgba(0, 0, 0, ${opacity})`;
+  },
   labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
   style: {
     borderRadius: 16,

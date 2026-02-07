@@ -380,6 +380,7 @@ export const generateBulkPayroll = async (req, res) => {
 
     const employees = await Employee.find({
       companyId: req.user.companyId,
+      isDeleted: { $ne: true }, // 🔥 exclude deleted employees
     });
 
     let success = 0;

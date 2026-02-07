@@ -48,7 +48,11 @@ export const getAttendanceReport = async (req, res) => {
 
     /* ---------------- EMPLOYEES ---------------- */
 
-    const employeeQuery = { companyId, staffType: "employee" };
+    const employeeQuery = {
+      companyId: req.user.companyId,
+      staffType: "employee",
+      isDeleted: { $ne: true }, // 🔥 exclude deleted employees
+    };
 
     if (req.user.role === "employee") {
       employeeQuery._id = req.user.employeeId;

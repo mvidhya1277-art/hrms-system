@@ -118,6 +118,7 @@ export const getEmployees = async (req, res) => {
   const employees = await Employee.find({
     companyId: req.user.companyId,
     staffType: "employee", // 🔥 IMPORTANT
+    isDeleted: { $ne: true }
   });
 
   res.json(employees);

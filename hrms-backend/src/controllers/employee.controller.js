@@ -1,6 +1,7 @@
 import Employee from "../models/Employee.js";
 import AttendanceLog from "../models/AttendanceLog.js";
 import Leave from "../models/Leave.js";
+import Payroll from "../models/Payroll.js";
 
 // ⚠️ TEMPORARY – remove after use
 export const resetEmployeePassword = async (req, res) => {
@@ -69,10 +70,23 @@ export const getEmployeeListByFilter = async (req, res) => {
     const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
     // 1️⃣ Get all employees
-    const employees = await Employee.find({
+    const showDeleted = req.query.deleted === "true";
+
+    const employeeQuery = {
       companyId,
       staffType: "employee",
-    }).select("_id name empCode");
+    };
+
+    if (showDeleted) {
+      employeeQuery.isDeleted = true;
+    } else {
+      employeeQuery.isDeleted = { $ne: true };
+    }
+
+    const employees = await Employee.find(employeeQuery)
+      .select("_id name empCode");
+
+
 
     const employeeIds = employees.map(e => e._id.toString());
 
@@ -158,3 +172,77 @@ export const getEmployeeListByFilter = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch employees" });
   }
 };
+
+export const deleteEmployee = async (req, res) => {
+  try {
+    if (!["admin", "hr_admin", "super_admin"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { id } = req.params;
+
+    const employee = await Employee.findOne({
+      _id: id,
+      companyId: req.user.companyId,
+      isDeleted: { $ne: true },
+    });
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // 🔒 prevent deleting self
+    if (String(req.user.employeeId) === String(id)) {
+      return res
+        .status(400)
+        .json({ message: "You cannot delete your own account" });
+    }
+
+    // ✅ soft delete
+    employee.isDeleted = true;
+    employee.deletedAt = new Date();
+    await employee.save();
+
+    // (optional) cleanup data
+    await AttendanceLog.deleteMany({ empId: id });
+    await Leave.deleteMany({ employeeId: id });
+    await Payroll.deleteMany({ employeeId: id });
+
+    res.json({ message: "Employee deleted successfully" });
+  } catch (err) {
+    console.error("DELETE EMPLOYEE ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const restoreEmployee = async (req, res) => {
+  try {
+    if (!["admin", "hr_admin", "super_admin"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { id } = req.params;
+
+    const employee = await Employee.findOne({
+      _id: id,
+      companyId: req.user.companyId,
+      isDeleted: true,
+    });
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found or not deleted" });
+    }
+
+    employee.isDeleted = false;
+    employee.deletedAt = null;
+    await employee.save();
+
+    res.json({ message: "Employee restored successfully" });
+  } catch (err) {
+    console.error("RESTORE EMPLOYEE ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+

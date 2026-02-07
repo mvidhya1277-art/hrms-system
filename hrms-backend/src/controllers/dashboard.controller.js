@@ -71,9 +71,14 @@ export const getAdminDashboard = async (req, res) => {
 
     // 1️⃣ Employees (exclude admins)
     const employees = await Employee.find(
-      { companyId, staffType: "employee" },
+      {
+        companyId,
+        staffType: "employee",
+        isDeleted: { $ne: true }, // 🔥 exclude deleted
+      },
       { _id: 1, name: 1 }
     );
+
 
     const employeeIds = employees.map(e => e._id);
     const employeeNameMap = {};

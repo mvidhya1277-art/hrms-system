@@ -19,7 +19,9 @@ export const getPayrollReport = async (req, res) => {
     const employeeQuery = {
       companyId,
       staffType: "employee",
+      isDeleted: { $ne: true }, // 🔥 hide deleted employees
     };
+
 
     if (req.user.role === "employee") {
       employeeQuery._id = req.user.employeeId;

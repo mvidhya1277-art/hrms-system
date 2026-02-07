@@ -1,5 +1,5 @@
 import express from "express";
-import { companyScope } from "../middleware/CompanyScope.js";
+import { companyScope } from "../middleware/companyScope.js";
 import {
   registerDevice,
   addEmployee,

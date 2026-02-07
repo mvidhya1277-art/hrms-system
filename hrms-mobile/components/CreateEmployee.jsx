@@ -80,7 +80,7 @@ export default function CreateEmployee() {
           <Input label="Phone" value={phone} onChange={setPhone} keyboard="phone-pad" />
           <Input label="Password" value={password} onChange={setPassword} secure />
           <Input label="Salary" value={salary} onChange={setSalary} keyboard="numeric" />
-          <Input label="RFID UID (optional)" value={rfidUid} onChange={setRfidUid} />
+          <Input label="RFID UID" value={rfidUid} onChange={setRfidUid} />
 
           <TouchableOpacity
             style={[styles.button, loading && { opacity: 0.6 }]}
@@ -149,3 +149,4 @@ const styles = {
     fontWeight: "700",
   },
 };
+

@@ -21,6 +21,7 @@ export const getLeaveReport = async (req, res) => {
     const employeeQuery = {
       companyId,
       staffType: "employee",
+      isDeleted: { $ne: true }, // 🔥 exclude deleted employees
     };
 
     if (req.user.role === "employee") {

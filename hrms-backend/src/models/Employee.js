@@ -49,6 +49,11 @@ const employeeSchema = new mongoose.Schema(
       required: true,
       default: 0
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: Date,
   },
   { timestamps: true }
 );

@@ -47,6 +47,13 @@ export default function AdminDrawerContent({ navigation }) {
           label="Leaves"
           route="/(admin-tabs)/tabs/leaves"
         />
+
+        <MenuItem
+          icon="sunny-outline"
+          label="Holidays"
+          route="/(admin-tabs)/holidays"
+        />
+        
         <MenuItem
           icon="bar-chart-outline"
           label="Reports"

@@ -1,4 +1,4 @@
-import { View, Text, ActivityIndicator, Button } from "react-native";
+import { View, Text, ActivityIndicator, Button, StyleSheet, Pressable, ScrollView } from "react-native";
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import axios from "axios";
@@ -23,7 +23,10 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
 
   const params = useLocalSearchParams();
   const routeEmployeeId = params?.employeeId;
-  const targetEmployeeId = routeEmployeeId || employeeId;
+  const myEmployeeId = useAuthStore(s => s.employeeId);
+  // const targetEmployeeId = routeEmployeeId || employeeId;
+  const targetEmployeeId =
+    routeEmployeeId || employeeId || myEmployeeId;
 
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = new Date();
@@ -98,7 +101,6 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
     }
   };
 
-  /* ---------------- CALENDAR MARKING ---------------- */
 
   const buildCalendarMarks = (data, year, month) => {
     const marks = {};
@@ -110,6 +112,20 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
     });
 
     const daysInMonth = new Date(year, month, 0).getDate();
+
+    // helper for pill style
+    const makeMark = (bg) => ({
+      customStyles: {
+        container: {
+          backgroundColor: bg,
+          borderRadius: 10,
+        },
+        text: {
+          color: "#fff",
+          fontWeight: "700",
+        },
+      },
+    });
 
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month - 1, d);
@@ -124,29 +140,30 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
       const leave = getLeaveOnDate(data, date);
 
       if (leave && leave.leaveType === "half") {
-        marks[dateStr] = { selected: true, selectedColor: "#facc15" };
+        marks[dateStr] = makeMark("#facc15"); // Half Day
         continue;
       }
 
       if (leave) {
-        marks[dateStr] = { selected: true, selectedColor: "#ef4444" };
+        marks[dateStr] = makeMark("#ef4444"); // Leave
         continue;
       }
 
       if (getHolidayName(dateStr) || isSunday(date) || isEvenSaturday(date)) {
-        marks[dateStr] = { selected: true, selectedColor: "#3b82f6" };
+        marks[dateStr] = makeMark("#3b82f6"); // Holiday
         continue;
       }
 
       if (rec && rec.status === "Present") {
-        marks[dateStr] = { selected: true, selectedColor: "#22c55e" };
+        marks[dateStr] = makeMark("#22c55e"); // Present
       } else {
-        marks[dateStr] = { selected: true, selectedColor: "#9ca3af" };
+        marks[dateStr] = makeMark("#9ca3af"); // Absent
       }
     }
 
     setMarkedDates({ ...marks });
   };
+
 
   /* ---------------- DAY PRESS ---------------- */
 
@@ -236,69 +253,222 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
 
   const summary = getMonthlySummary();
 
-  /* ---------------- UI ---------------- *///bulk
-
   return (
-    <View style={{ flex: 1, padding: 16 }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      contentContainerStyle={{ padding: 12, paddingBottom: 24 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.page}>
 
-      <Text style={{ fontSize: 18, marginBottom: 6 }}>
-        {employeeName} Attendance
-      </Text>
+        <Text style={styles.title}>My Attendance</Text>
+        <Text style={styles.subtitle}>Attendance Tracking</Text>
 
-      <View style={{ flexDirection: "row", marginBottom: 10 }}>
-        <Text style={{ marginRight: 15 }}>🟢 Present</Text>
-        <Text style={{ marginRight: 15 }}>🔴 Leave</Text>
-        <Text style={{ marginRight: 15 }}>🟡 Half</Text>
-        <Text>🔘 Absent</Text>
-      </View>
-
-      <Calendar
-        markedDates={markedDates}
-        enableSwipeMonths
-        onDayPress={handleDayPress}
-        onMonthChange={(month) => {
-          setSelectedDate(null);
-          setDayDetails(null);
-          setCurrentMonth({ year: month.year, month: month.month });
-        }}
-      />
-
-      {loading && <ActivityIndicator size="small" style={{ marginTop: 10 }} />}
-
-      {selectedDate && (
-        <View style={{ marginTop: 15, padding: 12, borderWidth: 1 }}>
-          <Text style={{ fontWeight: "bold" }}>{selectedDate}</Text>
-          {dayDetails?.type === "holiday" && (
-            <Text>Holiday: {dayDetails.label}</Text>
-          )}
-          {dayDetails?.type === "info" && <Text>{dayDetails.label}</Text>}
-          {dayDetails && !dayDetails.type && (
-            <Text>Status: {dayDetails.status}</Text>
-          )}
-          {!dayDetails && <Text>Absent</Text>}
+        {/* Summary cards */}
+        <View style={styles.cardRow}>
+          <View style={[styles.statCard, { borderTopColor: "#22c55e", borderTopWidth: 4 }]}>
+            <Text style={styles.statNumber}>{summary.present}</Text>
+            <Text style={styles.statLabel}>Present</Text>
+          </View>
+          <View style={[styles.statCard, { borderTopColor: "#ef4444", borderTopWidth: 4 }]}>
+            <Text style={styles.statNumber}>{summary.leave}</Text>
+            <Text style={styles.statLabel}>Leave</Text>
+          </View>
+          <View style={[styles.statCard, { borderTopColor: "#facc15", borderTopWidth: 4 }]}>
+            <Text style={styles.statNumber}>{summary.half}</Text>
+            <Text style={styles.statLabel}>Half Day</Text>
+          </View>
+          <View style={[styles.statCard, { borderTopColor: "#b3abab", borderTopWidth: 4 }]}>
+            <Text style={styles.statNumber}>{summary.absent}</Text>
+            <Text style={styles.statLabel}>Absent</Text>
+          </View>
         </View>
-      )}
 
-      <View style={{ marginTop: 20, padding: 12, backgroundColor: "#f3f4f6" }}>
-        <Text style={{ fontWeight: "bold" }}>Monthly Summary</Text>
-        <Text>🟢 Present: {summary.present}</Text>
-        <Text>🔴 Leave: {summary.leave}</Text>
-        <Text>🟡 Half: {summary.half}</Text>
-        <Text>🔘 Absent: {summary.absent}</Text>
-      </View>
-      <View style={{ marginTop: 20 }}>
-        <Button
-          title="View Payroll"
+        {/* Calendar */}
+        <View style={styles.calendarCard}>
+          <Calendar
+            markedDates={markedDates}
+            enableSwipeMonths
+            markingType="custom"
+            theme={{
+              todayTextColor: "#ef4444",
+              textDayFontWeight: "600",
+              textMonthFontWeight: "700",
+              arrowColor: "#ef4444",
+            }}
+            onDayPress={handleDayPress}
+            onMonthChange={(month) => {
+              setSelectedDate(null);
+              setDayDetails(null);
+              setCurrentMonth({ year: month.year, month: month.month });
+            }}
+          />
+
+          {/* Legend */}
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.dot, { backgroundColor: "#22c55e" }]} />
+              <Text>Present</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.dot, { backgroundColor: "#3b82f6" }]} />
+              <Text>Holiday</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.dot, { backgroundColor: "#facc15" }]} />
+              <Text>Half Day</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.dot, { backgroundColor: "#ef4444" }]} />
+              <Text> Leave</Text>
+            </View>
+          </View>
+        </View>
+
+        {loading && <ActivityIndicator style={{ marginTop: 10 }} />}
+
+        {selectedDate && (
+          <View style={styles.detailBox}>
+            <Text style={styles.detailDate}>{selectedDate}</Text>
+            <Text>Status: {dayDetails?.status || dayDetails?.label || "Absent"}</Text>
+          </View>
+        )}
+
+        {/* Payroll Button */}
+        <Pressable
+          style={styles.payrollBtn}
           onPress={() =>
             router.push({
               pathname: "/(admin-tabs)/tabs/employees/payroll",
-              params: { employeeId: targetEmployeeId, employeeName },
+              params: {
+                employeeId: targetEmployeeId,
+                employeeName: employeeName || "My",
+              },
             })
           }
-        />
+        >
+          <Text style={styles.payrollText}>VIEW PAYROLL</Text>
+        </Pressable>
+
       </View>
-    </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 0,
+  },
+
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  subtitle: {
+    textAlign: "center",
+    color: "#6b7280",
+    marginBottom: 12,
+  },
+
+  cardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  statCard: {
+    width: "23%",
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    elevation: 3,
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  statLabel: {
+    fontSize: 11,
+    color: "#6b7280",
+  },
+
+  /* calendar */
+  calendarCard: {
+    marginTop: 6,
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 12,
+    elevation: 4,
+  },
+
+  legendRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 10,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 4,
+    marginRight: 4,
+  },
+
+  /* detail box */
+  detailBox: {
+    marginTop: 8,
+    backgroundColor: "#f9fafb",
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  detailDate: {
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+
+  /* compact summary */
+  compactSummary: {
+    marginTop: 12,
+    backgroundColor: "#f9fafb",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  compactTitle: {
+    fontWeight: "700",
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  compactText: {
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+
+  /* button */
+  payrollBtn: {
+    marginTop: 16,
+    backgroundColor: "#ef4444",
+    padding: 14,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  payrollText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+});
+
 
 

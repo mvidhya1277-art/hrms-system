@@ -180,7 +180,12 @@ export const getWorkingHoursReport = async (req, res) => {
     }
 
     /* ---------------- EMPLOYEES ---------------- */
-    const employeeQuery = { companyId, staffType: "employee" };
+    const employeeQuery = {
+      companyId,
+      staffType: "employee",
+      isDeleted: { $ne: true }, // 🔥 hide deleted employees
+    };
+
 
     if (req.user.role === "employee") {
       employeeQuery._id = req.user.employeeId;

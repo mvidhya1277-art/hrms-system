@@ -188,7 +188,11 @@ export const getPerformanceReport = async (req, res) => {
     /* ---------------- EMPLOYEES ---------------- */
 
     const employees = await Employee.find(
-      { companyId, staffType: "employee" },
+      {
+        companyId,
+        staffType: "employee",
+        isDeleted: { $ne: true }, // 🔥 exclude deleted employees
+      },
       { _id: 1, name: 1 }
     );
 
@@ -226,7 +230,7 @@ export const getPerformanceReport = async (req, res) => {
 
     const totalDays =
       type === "daily" ? 1 :
-      new Date(Number(month.split("-")[0]), Number(month.split("-")[1]), 0).getDate();
+        new Date(Number(month.split("-")[0]), Number(month.split("-")[1]), 0).getDate();
 
     let top = 0, average = 0, needsSupport = 0;
     let sumAttendance = 0, sumLate = 0;

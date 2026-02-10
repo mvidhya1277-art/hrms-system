@@ -5,11 +5,7 @@ import axios from "axios";
 import { Calendar } from "react-native-calendars";
 import { useAuthStore } from "../../../../store/authStore";
 import { API_BASE_URL } from "../../../../constants/api";
-import {
-  isSunday,
-  isEvenSaturday,
-  getHolidayName,
-} from "../../../../constants/holidays";
+
 
 export default function EmployeeCalendar({ employeeId, employeeName }) {
   const token = useAuthStore((s) => s.token);
@@ -90,166 +86,88 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
         params: { year, month },
         headers: { Authorization: `Bearer ${token}` },
       });
-
+         
       const data = Array.isArray(res.data) ? res.data : [];
       setAttendanceData(data);
       buildCalendarMarks(data, year, month);
     } catch (err) {
       console.error("Calendar error:", err.response?.data || err.message);
     } finally {
-      setLoading(false);
+      setLoading(false);//sundayv weekends
     }
   };
 
 
-  const buildCalendarMarks = (data, year, month) => {
+  const buildCalendarMarks = (data) => {
     const marks = {};
     const todayStr = new Date().toISOString().slice(0, 10);
 
-    const recordMap = {};
-    data.forEach((r) => {
-      if (r.date) recordMap[r.date] = r;
+    data.forEach((rec) => {
+      if (!rec.date || rec.date > todayStr) return;
+
+      let color = "#9ca3af"; // Absent
+
+      if (rec.status === "Present") {
+        color = "#22c55e";
+      }
+      else if (rec.status === "Leave") {
+        const leaveType = (rec.leaveType || "").toLowerCase();
+        color = leaveType === "half" ? "#facc15" : "#ef4444";
+      }
+      else if (rec.status === "Weekly Off" || rec.status === "Holiday") {
+        color = "#3b82f6";//todayStr
+      }
+
+      marks[rec.date] = {
+        customStyles: {
+          container: {
+            backgroundColor: color,
+            borderRadius: 10,
+          },
+          text: {
+            color: "#fff",
+            fontWeight: "700",
+          },
+        },
+      };
     });
 
-    const daysInMonth = new Date(year, month, 0).getDate();
-
-    // helper for pill style
-    const makeMark = (bg) => ({
-      customStyles: {
-        container: {
-          backgroundColor: bg,
-          borderRadius: 10,
-        },
-        text: {
-          color: "#fff",
-          fontWeight: "700",
-        },
-      },
-    });
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month - 1, d);
-      date.setHours(0, 0, 0, 0);
-
-      const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(
-        d
-      ).padStart(2, "0")}`;
-      if (dateStr > todayStr) continue;
-
-      const rec = recordMap[dateStr];
-      const leave = getLeaveOnDate(data, date);
-
-      if (leave && leave.leaveType === "half") {
-        marks[dateStr] = makeMark("#facc15"); // Half Day
-        continue;
-      }
-
-      if (leave) {
-        marks[dateStr] = makeMark("#ef4444"); // Leave
-        continue;
-      }
-
-      if (getHolidayName(dateStr) || isSunday(date) || isEvenSaturday(date)) {
-        marks[dateStr] = makeMark("#3b82f6"); // Holiday
-        continue;
-      }
-
-      if (rec && rec.status === "Present") {
-        marks[dateStr] = makeMark("#22c55e"); // Present
-      } else {
-        marks[dateStr] = makeMark("#9ca3af"); // Absent
-      }
-    }
-
-    setMarkedDates({ ...marks });
+    setMarkedDates(marks);
   };
 
 
-  /* ---------------- DAY PRESS ---------------- */
 
-  const handleDayPress = (day) => {
-    const dateStr = day.dateString;
 
-    if (isFutureDate(dateStr)) {
-      setSelectedDate(dateStr);
-      setDayDetails({
-        type: "info",
-        label: "Future date — attendance not available",
-      });
-      return;
-    }
+const handleDayPress = (day) => {
 
-    const date = new Date(dateStr + "T00:00:00");
-    setSelectedDate(dateStr);
+  const record = attendanceData.find(
+    (r) => r.date === day.dateString
+  );
 
-    const holiday = getHolidayName(dateStr);
-    if (holiday) return setDayDetails({ type: "holiday", label: holiday });
-    if (isSunday(date))
-      return setDayDetails({
-        type: "holiday",
-        label: "Weekly Holiday (Sunday)",
-      });
-    if (isEvenSaturday(date))
-      return setDayDetails({
-        type: "holiday",
-        label: "Weekly Holiday (Saturday)",
-      });
+  console.log("🔍 FOUND RECORD:", record);
 
-    const leave = getLeaveOnDate(attendanceData, date);
-    if (leave) return setDayDetails(leave);
-
-    const record = attendanceData.find((r) => r.date === dateStr);
-    setDayDetails(record || null);
-  };
+  setSelectedDate(day.dateString);
+  setDayDetails(record || { status: "Absent" });
+};
 
   /* ---------------- MONTHLY SUMMARY ---------------- */
 
   const getMonthlySummary = () => {
-    let present = 0,
-      leave = 0,
-      half = 0,
-      absent = 0;
+    let present = 0, leave = 0, half = 0, absent = 0;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const year = currentMonth.year;
-    const monthIndex = currentMonth.month - 1;
-    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-
-    const recordMap = {};
     attendanceData.forEach((r) => {
-      if (r.date) recordMap[r.date] = r;
+      if (r.status === "Weekly Off" || r.status === "Holiday") return;
+
+      if (r.status === "Present") present++;
+      else if (r.status === "Leave" && r.leaveType === "half") half++;
+      else if (r.status === "Leave") leave++;
+      else if (r.status === "Absent") absent++;
     });
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, monthIndex, d);
-      date.setHours(0, 0, 0, 0);
-
-      const dateStr = `${year}-${String(currentMonth.month).padStart(
-        2,
-        "0"
-      )}-${String(d).padStart(2, "0")}`;
-
-      if (
-        date > today ||
-        isSunday(date) ||
-        isEvenSaturday(date) ||
-        getHolidayName(dateStr)
-      )
-        continue;
-
-      const rec = recordMap[dateStr];
-      const leaveRec = getLeaveOnDate(attendanceData, date);
-
-      if (leaveRec && leaveRec.leaveType === "half") half++;
-      else if (leaveRec) leave++;
-      else if (rec && rec.status === "Present") present++;
-      else absent++;
-    }
 
     return { present, leave, half, absent };
   };
+
+
 
   const summary = getMonthlySummary();
 

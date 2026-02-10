@@ -19,7 +19,7 @@ router.get("/employee/:id", protect, getEmployeePayroll);
 router.get("/me", protect, getMyPayroll);
 router.patch("/recalculate/:payrollId", protect, recalculatePayroll);
 router.post("/generate-bulk", protect, generateBulkPayroll);
-router.get("/payroll/all", protect, getAllPayrollsForCompany);
+router.get("/company", protect, getAllPayrollsForCompany);
 
 
 

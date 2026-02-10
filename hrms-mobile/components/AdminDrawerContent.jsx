@@ -53,7 +53,7 @@ export default function AdminDrawerContent({ navigation }) {
           label="Holidays"
           route="/(admin-tabs)/holidays"
         />
-        
+
         <MenuItem
           icon="bar-chart-outline"
           label="Reports"
@@ -67,6 +67,7 @@ export default function AdminDrawerContent({ navigation }) {
         <MenuItem
           icon="settings-outline"
           label="Settings"
+          route="/(admin-tabs)/settings"
         />
       </View>
 
@@ -148,3 +149,144 @@ const styles = {
     fontWeight: "600",
   },
 };
+
+// import { View, Text, TouchableOpacity } from "react-native";
+// import { Ionicons } from "@expo/vector-icons";
+// import { useRouter } from "expo-router";
+// import { useAuthStore } from "../store/authStore";
+// import { useTheme } from "../hooks/useTheme";
+// import { useSafeTheme } from "../hooks/useSafeTheme";
+
+// export default function AdminDrawerContent({ navigation }) {
+//   const router = useRouter();
+//   const { user, logout } = useAuthStore();
+//   const theme = useSafeTheme();
+
+//   // const theme = useTheme() ?? {
+//   //   background: "#fff",
+//   //   card: "#fff",
+//   //   text: "#000",
+//   //   subText: "#666",
+//   //   border: "#ddd",
+//   //   primary: "#ef4444",
+//   // };
+//   console.log("THEME:", theme);
+
+//   const MenuItem = ({ icon, label, route, active }) => (
+//     <TouchableOpacity
+//       onPress={() => {
+//         navigation.closeDrawer();
+//         if (route) router.push(route);
+//       }}
+//       style={[
+//         styles.menuItem,
+//         { backgroundColor: active ? theme.primary : "transparent" },
+//       ]}
+//     >
+//       <Ionicons name={icon} size={20} color="#fff" />
+//       <Text style={[styles.menuText, { color: "#fff" }]}>{label}</Text>
+//     </TouchableOpacity>
+//   );
+
+//   return (
+//     <View style={[styles.container, { backgroundColor: theme.card }]}>
+//       {/* PROFILE */}
+//       <View
+//         style={[
+//           styles.profile,
+//           { borderBottomColor: theme.border },
+//         ]}
+//       >
+//         <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
+//           <Ionicons name="person" size={26} color="#fff" />
+//         </View>
+//         <Text style={[styles.name, { color: theme.text }]}>
+//           {user?.name || "Admin"}
+//         </Text>
+//         <Text style={[styles.role, { color: theme.subText }]}>
+//           HR Administrator
+//         </Text>
+//       </View>
+
+//       {/* MENU */}
+//       <View style={{ marginTop: 20 }}>
+//         <MenuItem icon="speedometer-outline" label="Dashboard" route="/(admin-tabs)/tabs/dashboard" />
+//         <MenuItem icon="calendar-outline" label="Leaves" route="/(admin-tabs)/tabs/leaves" />
+//         <MenuItem icon="sunny-outline" label="Holidays" route="/(admin-tabs)/holidays" />
+//         <MenuItem icon="bar-chart-outline" label="Reports" route="/(admin-tabs)/reports" />
+//         <MenuItem icon="cash-outline" label="Payroll" route="/(admin-tabs)/tabs/employees/all-payrolls" />
+//         <MenuItem icon="settings-outline" label="Settings" route="/(admin-tabs)/settings/account" />
+//       </View>
+
+//       {/* LOGOUT */}
+//       <TouchableOpacity
+//         style={[
+//           styles.logout,
+//           { borderColor: theme.primary },
+//         ]}
+//         onPress={async () => {
+//           await logout();
+//           router.replace("/login");
+//         }}
+//       >
+//         <Ionicons name="log-out-outline" size={20} color={theme.primary} />
+//         <Text style={[styles.logoutText, { color: theme.primary }]}>
+//           Logout
+//         </Text>
+//       </TouchableOpacity>
+//     </View>
+//   );
+// }
+
+// const styles = {
+//   container: { flex: 1, padding: 20 },
+
+//   profile: {
+//     alignItems: "center",
+//     paddingVertical: 30,
+//     borderBottomWidth: 1,
+//   },
+
+//   avatar: {
+//     width: 56,
+//     height: 56,
+//     borderRadius: 28,
+//     alignItems: "center",
+//     justifyContent: "center",
+//     marginBottom: 10,
+//   },
+
+//   name: { fontSize: 16, fontWeight: "600" },
+//   role: { fontSize: 12, marginTop: 2 },
+
+//   menuItem: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingVertical: 14,
+//     paddingHorizontal: 16,
+//     borderRadius: 12,
+//     marginBottom: 6,
+//   },
+
+//   menuText: {
+//     marginLeft: 12,
+//     fontSize: 14,
+//     fontWeight: "500",
+//   },
+
+//   logout: {
+//     marginTop: "auto",
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "center",
+//     borderWidth: 1,
+//     padding: 12,
+//     borderRadius: 12,
+//   },
+
+//   logoutText: {
+//     marginLeft: 8,
+//     fontWeight: "600",
+//   },
+// };
+

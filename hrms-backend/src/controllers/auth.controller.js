@@ -21,7 +21,11 @@ export const login = async (req, res) => {
     // ===============================
     // 1️⃣ ADMIN LOGIN
     // ===============================
-    const admin = await Admin.findOne({ phone });
+    // const admin = await Admin.findOne({ phone });
+    const admin = await Admin.findOne({
+      phone,
+      role: { $in: ["hr_admin", "super_admin"] },
+    });
 
     if (admin) {
       const isMatch = await admin.comparePassword(password);
@@ -93,7 +97,10 @@ export const login = async (req, res) => {
     // ===============================
     // 2️⃣ EMPLOYEE LOGIN
     // ===============================
-    const employee = await Employee.findOne({ phone });
+    const employee = await Employee.findOne({
+      phone,
+      staffType: "employee",
+    });
 
     if (!employee) {
       return res.status(401).json({ message: "Invalid phone or password" });

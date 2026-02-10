@@ -53,6 +53,11 @@ const employeeSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    theme: {
+      type: String,
+      enum: ["light", "dark"],
+      default: "light",
+    },
     deletedAt: Date,
   },
   { timestamps: true }

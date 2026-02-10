@@ -24,7 +24,7 @@ const leaveSchema = new mongoose.Schema(
     },
     leaveType: {
       type: String,
-      enum: ["full", "half"],
+      enum: ["full", "half","HALF", "FULL"],
       default: "full",
     },
 

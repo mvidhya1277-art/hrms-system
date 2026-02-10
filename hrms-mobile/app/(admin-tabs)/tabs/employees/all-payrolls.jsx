@@ -90,10 +90,10 @@ export default function AdminPayrollList() {
   const fetchPayrolls = async () => {
     try {
       const res = await axios.get(
-        `${API_BASE_URL}/payroll/all`,
+        `${API_BASE_URL}/payroll/company`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setPayrolls(res.data || []);
+      setPayrolls(res.data?.payrolls || []);
     } catch (err) {
       console.log("FETCH ALL PAYROLLS ERROR:", err.response?.data || err.message);
     }

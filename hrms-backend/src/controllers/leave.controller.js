@@ -1,50 +1,78 @@
-import Leave from "../models/Leave.js";
+ import Leave from "../models/Leave.js";
 import getEmployeeId from "../helpers/getEmployeeId.js";
 
-/* EMPLOYEE → APPLY LEAVE */
+import Company from "../models/Company.js";
+import Holiday from "../models/Holiday.js";
+import { normalizeDate } from "../utils/normalizeDate.js";
+import { isWorkingDay } from "../utils/workingDay.util.js";
+
 export const applyLeave = async (req, res) => {
   try {
-    const { fromDate, toDate, reason, leaveType } = req.body;
     const employeeId = await getEmployeeId(req);
-
-    if (!employeeId) {
-      return res.status(400).json({ message: "Employee profile not linked" });
-    }
+    const { fromDate, toDate, reason, leaveType } = req.body;
 
     if (!fromDate || !toDate || !reason || !leaveType) {
       return res.status(400).json({ message: "All fields required" });
     }
 
+    const from = normalizeDate(fromDate);
+    const to = normalizeDate(toDate);
+
+    if (!from || !to) {
+      return res.status(400).json({ message: "Invalid date format" });
+    }
+
+    // 🔵 Fetch company
+    const company = await Company.findOne({
+      companyId: req.user.companyId,
+      isActive: true,
+    });
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // 🔵 Fetch holidays
+    const holidays = await Holiday.find({
+      companyId: req.user.companyId,
+      date: { $gte: from, $lte: to },
+    }).lean();
+
+    const holidaySet = new Set(holidays.map(h => h.date));
+
+    // 🔵 Build valid leave dates
+    const dates = getDateRange(from, to).filter(ds => {
+      const d = new Date(ds);
+      return isWorkingDay(d, company) && !holidaySet.has(ds);
+    });
+
+    if (dates.length === 0) {
+      return res.status(400).json({
+        message: "Selected dates are non-working days / holidays",
+      });
+    }
+
+    // 🔒 Overlap check
     const overlappingLeave = await Leave.findOne({
       employeeId,
       status: { $in: ["pending", "approved"] },
-      $or: [
-        // Same day overlap
-        {
-          fromDate: fromDate,
-          toDate: toDate,
-        },
-        // Range overlap
-        {
-          fromDate: { $lte: toDate },
-          toDate: { $gte: fromDate },
-        },
-      ],
+      fromDate: { $lte: to },
+      toDate: { $gte: from },
     });
 
     if (overlappingLeave) {
       return res.status(400).json({
-        message: "Leave already applied for this date",
+        message: "Leave already applied for this date range",
       });
     }
 
     const leave = await Leave.create({
       employeeId,
       companyId: req.user.companyId,
-      fromDate,
-      toDate,
+      fromDate: from,
+      toDate: to,
       reason,
-      leaveType: leaveType || "full",
+      leaveType: leaveType.toLowerCase(),
     });
 
     res.status(201).json({
@@ -117,45 +145,33 @@ export const updateLeaveStatus = async (req, res) => {
   });
 };
 
+
 export const applyLeaveByAdminSelf = async (req, res) => {
   try {
-    // ✅ Correct admin check
     if (req.user.userType !== "admin") {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    // ✅ Ensure admin is linked to employee
     if (!req.user.employeeId) {
       return res.status(400).json({
-        message: "Admin employeeId missing. Cannot apply leave.",
+        message: "Admin employeeId missing",
       });
     }
 
-    let { fromDate, toDate, leaveType, reason } = req.body;
+    const { fromDate, toDate, leaveType, reason } = req.body;
 
-    if (!fromDate || !toDate || !leaveType) {
-      return res.status(400).json({
-        message: "fromDate, toDate and leaveType are required",
-      });
+    const from = normalizeDate(fromDate);
+    const to = normalizeDate(toDate);
+
+    if (!from || !to) {
+      return res.status(400).json({ message: "Invalid date format" });
     }
 
-    leaveType = leaveType.toLowerCase();
-
-    const from = new Date(fromDate);
-    from.setHours(0, 0, 0, 0);
-
-    const to = new Date(toDate);
-    to.setHours(0, 0, 0, 0);
-
-    // 🔒 Overlap check
     const overlappingLeave = await Leave.findOne({
       employeeId: req.user.employeeId,
       status: { $in: ["approved", "pending"] },
-      $or: [
-        { fromDate: { $lte: to, $gte: from } },
-        { toDate: { $lte: to, $gte: from } },
-        { fromDate: { $lte: from }, toDate: { $gte: to } },
-      ],
+      fromDate: { $lte: to },
+      toDate: { $gte: from },
     });
 
     if (overlappingLeave) {
@@ -165,14 +181,14 @@ export const applyLeaveByAdminSelf = async (req, res) => {
     }
 
     const leave = await Leave.create({
-      employeeId: req.user.employeeId,   // 🔥 CORRECT
+      employeeId: req.user.employeeId,
+      companyId: req.user.companyId,
       fromDate: from,
       toDate: to,
-      leaveType,
+      leaveType: leaveType.toLowerCase(),
       reason: reason || "-",
       status: "approved",
       appliedBy: "admin",
-      companyId: req.user.companyId,
     });
 
     res.status(201).json({
@@ -181,9 +197,7 @@ export const applyLeaveByAdminSelf = async (req, res) => {
     });
   } catch (error) {
     console.error("ADMIN LEAVE ERROR:", error);
-    res.status(500).json({
-      message: "Admin leave apply failed",
-    });
+    res.status(500).json({ message: "Admin leave apply failed" });
   }
 };
 

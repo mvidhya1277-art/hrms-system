@@ -75,6 +75,25 @@ const payrollSchema = new mongoose.Schema(
       enum: ["admin", "system"],
       default: "admin",
     },
+    pfAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    esiAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    professionalTaxAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    statutoryDeductions: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

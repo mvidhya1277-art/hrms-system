@@ -13,6 +13,10 @@ import {
   updateAttendanceRules,
 } from "../controllers/settings/attendanceRules.controller.js";
 import { protect,hrAdminOnly } from "../middleware/auth.middleware.js";
+import {
+  getPayrollSettings,
+  updatePayrollSettings,
+} from "../controllers/settings/payrollSettings.controller.js";
 
 const router = express.Router();
 
@@ -44,6 +48,24 @@ router.put(
   hrAdminOnly,
   updateAttendanceRules
 );
+
+/**
+ * 💰 Payroll Settings (HR Admin only)
+ */
+router.get(
+  "/payroll-settings",
+  protect,
+  hrAdminOnly,
+  getPayrollSettings
+);
+
+router.put(
+  "/payroll-settings",
+  protect,
+  hrAdminOnly,
+  updatePayrollSettings
+);
+
 
 
 

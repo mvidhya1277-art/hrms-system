@@ -1,82 +1,3 @@
-// import { View, Text, Button } from "react-native";
-// import { useEffect, useState } from "react";
-// import { useLocalSearchParams } from "expo-router";
-// import axios from "axios";
-// import { API_BASE_URL } from "../../../../constants/api";
-// import { useAuthStore } from "../../../../store/authStore";
-// import * as Linking from "expo-linking";
-
-// export default function Payslip() {
-//   const { payrollId } = useLocalSearchParams();
-//   const { token } = useAuthStore();
-//   const [payslip, setPayslip] = useState(null);
-
-//   useEffect(() => {
-//     fetchPayslip();
-//   }, []);
-
-//   const fetchPayslip = async () => {
-//     const res = await axios.get(
-//       `${API_BASE_URL}/payslip/${payrollId}/payslip`,
-//       { headers: { Authorization: `Bearer ${token}` } }
-//     );
-//     setPayslip(res.data);
-//   };
-
-//   if (!payslip) return <Text>Loading...</Text>;
-
-//   return (
-//     <View style={{ padding: 16 }}>
-//       <Text style={{ fontSize: 18 }}>Payslip</Text>
-
-//       <Text>Employee: {payslip.employee.name}</Text>
-//       <Text>Month: {payslip.company.month}</Text>
-
-//       <Text style={{ marginTop: 10 }}>Salary</Text>
-//       <Text>Basic: ₹{payslip.salary.basicSalary}</Text>
-//       <Text>Deductions: ₹{payslip.salary.deductions}</Text>
-//       <Text>Net: ₹{payslip.salary.netSalary}</Text>
-
-//       <Button
-//         title="Download PDF"
-//         onPress={() =>
-//           Linking.openURL(
-//             `${API_BASE_URL}/payslip/${payrollId}/payslip/pdf?token=${token}`
-//           )
-//         }
-//       />
-//     </View>
-//   );
-// }
-
-// import { View, Text, Button } from "react-native";
-// import { useLocalSearchParams } from "expo-router";
-// import { API_BASE_URL } from "../../../constants/api";
-// import { useAuthStore } from "../../../store/authStore";
-// import * as Linking from "expo-linking";
-
-// export default function Payslip() {
-//   const { payrollId } = useLocalSearchParams();
-//   const { token } = useAuthStore();
-
-//   const downloadPDF = () => {
-//     const url =
-//       `${API_BASE_URL}/payroll/${payrollId}/payslip/pdf?token=${token}`;
-
-//     Linking.openURL(url);
-//   };
-
-//   return (
-//     <View style={{ padding: 16 }}>
-//       <Text style={{ fontSize: 18, marginBottom: 20 }}>
-//         Payslip
-//       </Text>
-
-//       <Button title="Download PDF" onPress={downloadPDF} />
-//     </View>
-//   );
-// }
-
 import {
   View,
   Text,
@@ -93,10 +14,13 @@ import { useAuthStore } from "../../../../store/authStore";
 import * as Linking from "expo-linking";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 
 export default function Payslip() {
   const { payrollId } = useLocalSearchParams();
   const { token } = useAuthStore();
+
   const [payslip, setPayslip] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -108,7 +32,9 @@ export default function Payslip() {
     try {
       const res = await axios.get(
         `${API_BASE_URL}/payslip/${payrollId}/payslip`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       setPayslip(res.data);
     } catch (err) {
@@ -121,92 +47,152 @@ export default function Payslip() {
   if (loading) return <ActivityIndicator style={{ marginTop: 40 }} />;
   if (!payslip) return <Text>No payslip found</Text>;
 
-  const { employee, company, salary } = payslip;
+  const { employee, company, salary, attendance } = payslip;
 
   return (
-    <ScrollView style={styles.page} showsVerticalScrollIndicator={false}>
-      {/* Header Card */}
-      <LinearGradient
-        colors={["#2c3e50", "#34495e"]}
-        style={styles.headerCard}
+    <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
+      <ScrollView
+        style={styles.page}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }} // 🔥 IMPORTANT
       >
-        <Text style={styles.headerTitle}>Employee Payslip</Text>
+        {/* ================= HEADER ================= */}
+        <LinearGradient
+          colors={["#2c3e50", "#34495e"]}
+          style={styles.headerCard}
+        >
+          <Text style={styles.headerTitle}>Employee Payslip</Text>
 
-        <View style={styles.row}>
-          <View>
-            <Text style={styles.label}>Employee</Text>
-            <Text style={styles.value}>{employee.name}</Text>
+          <View style={styles.row}>
+            <View>
+              <Text style={styles.label}>Employee</Text>
+              <Text style={styles.value}>{employee.name}</Text>
+            </View>
+            <View>
+              <Text style={styles.label}>Employee ID</Text>
+              <Text style={styles.value}>{employee.empCode}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.label}>Employee ID</Text>
-            <Text style={styles.value}>{employee.empCode}</Text>
+
+          <View style={styles.row}>
+            <View>
+              <Text style={styles.label}>Month</Text>
+              <Text style={styles.value}>{company.month}</Text>
+            </View>
           </View>
+        </LinearGradient>
+
+        {/* ================= ATTENDANCE ================= */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Attendance Summary</Text>
+
+          <Row label="Total Working Days" value={attendance.totalWorkingDays} />
+          <Row label="Present Days" value={attendance.presentDays} />
+          <Row label="Leave Days" value={attendance.leaveDays} />
+          <Row label="Half Days" value={attendance.halfDays} />
+          <Row label="Absent Days" value={attendance.absentDays} />
         </View>
 
-        <View style={styles.row}>
-          <View>
-            <Text style={styles.label}>Month</Text>
-            <Text style={styles.value}>{company.month}</Text>
-          </View>
-          <View>
-            <Text style={styles.label}>Payment Date</Text>
-            <Text style={styles.value}>
-              {new Date(company.paymentDate).toLocaleDateString()}
-            </Text>
-          </View>
-        </View>
-      </LinearGradient>
+        {/* ================= EARNINGS ================= */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Earnings</Text>
 
-      {/* Salary Breakdown */}
-      <View style={styles.breakdownCard}>
-        <Text style={styles.breakTitle}>₹ Salary Breakdown</Text>
-
-        <View style={styles.line}>
-          <Text style={styles.text}>Basic Salary</Text>
-          <Text style={styles.amount}>₹{salary.basicSalary}</Text>
+          <Row
+            label="Basic Salary"
+            value={`₹${salary.basicSalary.toLocaleString("en-IN")}`}
+          />
         </View>
 
-        <View style={styles.line}>
-          <Text style={styles.text}>Other Deductions</Text>
-          <Text style={styles.amount}>₹{salary.deductions}</Text>
+        {/* ================= DEDUCTIONS ================= */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Deductions</Text>
+
+          <Row
+            label="Attendance / LOP Deduction"
+            value={`₹${salary.attendanceDeduction.toLocaleString("en-IN")}`}
+          />
+
+          {salary.pf > 0 && (
+            <Row
+              label="Provident Fund (PF)"
+              value={`₹${salary.pf.toLocaleString("en-IN")}`}
+            />
+          )}
+
+          {salary.esi > 0 && (
+            <Row
+              label="ESI"
+              value={`₹${salary.esi.toLocaleString("en-IN")}`}
+            />
+          )}
+
+          {salary.professionalTax > 0 && (
+            <Row
+              label="Professional Tax"
+              value={`₹${salary.professionalTax.toLocaleString("en-IN")}`}
+            />
+          )}
+
+          <View style={styles.divider} />
+
+          <Row
+            label="Total Deductions"
+            value={`₹${salary.totalDeductions.toLocaleString("en-IN")}`}
+            danger
+          />
         </View>
 
-        <View style={styles.divider} />
-
-        <View style={styles.line}>
-          <Text style={styles.total}>Total Deductions</Text>
-          <Text style={[styles.total, { color: "#ef4444" }]}>
-            ₹{salary.deductions}
+        {/* ================= NET PAY ================= */}
+        <View style={styles.netCard}>
+          <Text style={styles.netLabel}>Net Salary Payable</Text>
+          <Text style={styles.netAmount}>
+            ₹{salary.netSalary.toLocaleString("en-IN")}
           </Text>
         </View>
 
-        <View style={styles.netRow}>
-          <Text style={styles.netLabel}>Net Salary Payable</Text>
-          <Text style={styles.netAmount}>₹{salary.netSalary}</Text>
-        </View>
-      </View>
-
-      {/* Download Button */}
-      <TouchableOpacity
-        style={styles.downloadBtn}
-        onPress={() =>
-          Linking.openURL(
-            `${API_BASE_URL}/payslip/${payrollId}/payslip/pdf?token=${token}`
-          )
-        }
-      >
-        <Feather name="download" size={18} color="#fff" />
-        <Text style={styles.downloadText}> DOWNLOAD PDF</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* ================= DOWNLOAD ================= */}
+        <TouchableOpacity
+          style={styles.downloadBtn}
+          onPress={() =>
+            Linking.openURL(
+              `${API_BASE_URL}/payslip/${payrollId}/payslip/pdf?token=${token}`
+            )
+          }
+        >
+          <Feather name="download" size={18} color="#fff" />
+          <Text style={styles.downloadText}> DOWNLOAD PDF </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+/* ================= REUSABLE ROW ================= */
+
+function Row({ label, value, danger }) {
+  return (
+    <View style={styles.line}>
+      <Text style={styles.text}>{label}</Text>
+      <Text
+        style={[
+          styles.amount,
+          danger && { color: "#ef4444", fontWeight: "700" },
+        ]}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: "#f9fafb",
     padding: 16,
+    paddingBottom: 600
   },
 
   headerCard: {
@@ -237,14 +223,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  breakdownCard: {
+  card: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
-    elevation: 3,
+    marginBottom: 16,
+    elevation: 2,
   },
 
-  breakTitle: {
+  cardTitle: {
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 12,
@@ -266,41 +253,41 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: "#e5e7eb",
-    marginVertical: 8,
+    marginVertical: 10,
   },
 
-  total: {
-    fontWeight: "700",
-  },
-
-  netRow: {
-    backgroundColor: "#f9fafb",
-    padding: 12,
-    borderRadius: 10,
-    marginTop: 10,
+  netCard: {
+    backgroundColor: "#ecfdf5",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
     flexDirection: "row",
     justifyContent: "space-between",
   },
   netLabel: {
-    fontWeight: "700",
+    fontWeight: "800",
+    color: "#065f46",
   },
   netAmount: {
-    fontWeight: "800",
-    color: "#34a756",
+    fontWeight: "900",
+    color: "#059669",
+    fontSize: 16,
   },
 
   downloadBtn: {
-    marginTop: 20,
-    backgroundColor: "#ef4444",
-    padding: 16,
-    borderRadius: 14,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  marginTop: 20,
+  marginBottom: 24, // 🔥 ensures full visibility
+  backgroundColor: "#ef4444",
+  padding: 16,
+  borderRadius: 14,
+  flexDirection: "row",
+  justifyContent: "center",
+  alignItems: "center",
+},
   downloadText: {
     color: "#fff",
     fontWeight: "700",
     fontSize: 16,
+    marginLeft: 6,
   },
 });

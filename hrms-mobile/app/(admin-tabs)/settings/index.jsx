@@ -60,7 +60,7 @@ export default function SettingsHome() {
           icon="cash-outline"
           title="Payroll Settings"
           subtitle="PF, ESI, deductions"
-          onPress={() => {}}
+          onPress={() => router.push ("/(admin-tabs)/settings/payroll-settings")}
         />
         <SettingCard
           icon="notifications-outline"

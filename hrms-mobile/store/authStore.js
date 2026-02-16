@@ -31,6 +31,8 @@ export const useAuthStore = create((set) => ({
         password,
       });
 
+      console.log("LOGIN RESPONSE:", res.data);
+
       const { token, user } = res.data;
 
       await AsyncStorage.setItem("token", token);

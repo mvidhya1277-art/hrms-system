@@ -8,7 +8,7 @@ import {
 } from "../controllers/attendance.controller.js";
 
 import { protect ,hrAdminOnly} from "../middleware/auth.middleware.js";
-import { companyScope } from "../middleware/CompanyScope.js";
+import { companyScope } from "../middleware/companyScope.js";
 
 
 const router = express.Router();

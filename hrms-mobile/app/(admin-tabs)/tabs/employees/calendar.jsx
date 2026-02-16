@@ -67,6 +67,7 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
   /* ---------------- FETCH ---------------- */
 
   useEffect(() => {
+    if (!token) return; 
     setMarkedDates({});
     setAttendanceData([]);
     setSelectedDate(null);
@@ -75,6 +76,7 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
   }, [routeEmployeeId, currentMonth.year, currentMonth.month]);
 
   const fetchCalendar = async (year, month) => {
+      if (!token) return;
     try {
       setLoading(true);
 
@@ -86,6 +88,8 @@ export default function EmployeeCalendar({ employeeId, employeeName }) {
         params: { year, month },
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      console.log("TOKEN USED:", token);
          
       const data = Array.isArray(res.data) ? res.data : [];
       setAttendanceData(data);
